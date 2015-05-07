@@ -1,0 +1,39 @@
+package FloatNew.src;
+
+import java.awt.Point;
+import java.util.Random;
+
+public class FieldGenerator {
+int number, maxSize;
+Point center;
+int[] xPoints , yPoints, size;
+	public FieldGenerator(int number, Point Center, int maxSize) {
+		this.maxSize = maxSize;
+		this.number = number;
+		this.center = Center;
+	}
+	public void update(Point Center){
+		this.center = Center;
+		xPoints = new int[number];
+		yPoints = new int[number];
+		size = new int[number];
+		Random rand = new Random();
+		for(int i = 0; i < number; i++){
+			xPoints[i] = rand.nextInt(center.x*2);
+			yPoints[i] = rand.nextInt(center.y*2);
+			int displacementX = Math.abs(xPoints[i]-center.x);
+			int displacementY = Math.abs(yPoints[i]-center.y);
+			size[i] = (int) (Math.sqrt( displacementX*displacementX + displacementY*displacementY)/(Math.sqrt(center.x*center.x+center.y*center.y)/8));
+		}
+		
+	}
+	public int[] getX(){
+		return xPoints;
+	}
+	public int[] getY(){
+		return yPoints;
+	}
+	public int[] getSize(){
+		return size;
+	}
+}
