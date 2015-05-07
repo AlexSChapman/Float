@@ -1,0 +1,197 @@
+package FloatNew.src;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.util.Random;
+
+
+public class Projectile {
+	boolean explode = false;
+	Projectile[] spray;
+	int shotWidth;
+	static final double SPEED = 10;
+	int Width, Height;
+	int type;
+	double angle;
+	int xPos, yPos;
+	int rep = 0; 
+	double xMod, yMod;
+	boolean status = true;
+	int bounce = 4;
+	//type not yet implemented
+	public Projectile(int type, double angle, int x, int y) {
+		this.type  = type;
+		this.angle = Math.toRadians(angle);
+		this.xPos = x;
+		this.yPos = y;
+		
+		if(type == 1){
+			shotWidth = 4;
+		}
+		else if(type == 2){
+			shotWidth = 4;
+		}
+		else if(type == 3){
+			shotWidth = 8;
+		}
+		else if(type == 4){
+			Random gen = new Random();
+			shotWidth = 4;
+			spray = new Projectile[3];
+			for(int i = 0; i < spray.length; i++){
+				spray[i] = new Projectile(1,angle+(-1 + 2*i),x,y);
+			}
+		}
+	
+	}
+	
+	//Assume that angle is input in degree format
+	public Point move(int Width, int Height){
+		this.Width = Width;
+		this.Height = Height;
+			rep++;
+			if(rep == 1 && type == 2){
+				xMod = Math.cos(angle)*SPEED;
+				yMod = Math.sin(angle)*SPEED;
+			}
+		
+			int holderX = 1;
+			int holderY = 1;
+			if(type ==1){
+				xMod = Math.cos(angle)*SPEED * holderX;
+				yMod = Math.sin(angle)*SPEED * holderY;
+			}
+//				
+				
+				xPos += xMod;
+				yPos += yMod;
+				if(type == 4){
+					for(int i = 0; i< spray.length; i++){
+						spray[i].move(Width, Height);
+					}
+				}
+				if(type == 1){
+					if(xPos > Width || xPos < 0 || yPos > Height || yPos < 0 ){
+						status = false;
+						return null;
+					}
+					else{
+						return new Point(xPos,yPos);
+					}
+				}
+				else  if(type == 2 && bounce > 0||type == 3 && bounce > 0){
+					if(xPos > Width && xMod > 0){ 
+						xMod = -Math.cos(angle)*SPEED * holderX;
+						bounce--;
+					}
+					if(xPos < 0 && xMod < 0){
+						xMod = -Math.cos(angle)*SPEED * holderX;
+						bounce--;				}
+					if(yPos > Height && yMod > 0){ 
+						yMod = -Math.sin(angle)*SPEED * holderY;
+						bounce--;				}
+					if(yPos < 0 && yMod < 0){
+						yMod = -Math.sin(angle)*SPEED * holderY;
+						bounce--;
+						}
+					
+						return new Point(xPos,yPos);
+					
+				}
+				else if(xPos > Width || xPos < 0 || yPos > Height || yPos < 0 ){
+					status = false;
+					return null;
+				}
+				else{
+					return new Point(-10,-10);
+				}
+		
+	}
+	public void explode(){
+		explode = true;
+	}
+	public Point[] getPosition(){
+		
+		if(type < 4){
+			return new Point[] {new Point(xPos, yPos)};
+		}
+		else if(type == 4){
+			Point[] body = new Point[spray.length];
+			boolean allnull = true;
+			for( int i = 0; i < spray.length; i++){
+				
+				if(spray[i].xPos > Width || spray[i].xPos < 0 || spray[i].yPos > Height || spray[i].yPos < 0){
+					body[i] = null;
+				}
+				else{
+					body[i] = new Point(spray[i].xPos, spray[i].yPos);
+					allnull = false;
+				}
+			}
+			if(allnull == false){
+				return body;
+			}
+			else{
+				xPos = -20;
+				yPos = -20;
+				return null;
+			}
+		}
+		else{
+			return new Point[0];
+		}
+	}
+	public void paint(Graphics g, Color painted){
+		g.setColor(painted);
+		if(explode == true){
+			if(shotWidth < 50){
+				shotWidth++;
+				System.out.println("exploding");
+			}
+			else{
+				status = false;
+			}
+		}
+		
+
+		if(type == 1 || type == 3){
+			g.fillOval(xPos-shotWidth/2, yPos-shotWidth/2, shotWidth, shotWidth);
+			g.setColor(Color.BLACK);
+			g.drawOval(xPos-shotWidth/2, yPos-shotWidth/2, shotWidth, shotWidth);
+		}
+		if(type == 2){
+			g.fillRect(xPos-shotWidth/2, yPos-shotWidth/2, shotWidth, shotWidth);
+			g.setColor(Color.BLACK);
+			g.drawRect(xPos-shotWidth/2, yPos-shotWidth/2, shotWidth, shotWidth);
+		}
+		if(type == 4){
+			for(int i = 0; i< spray.length; i++){
+				g.fillRect(spray[i].xPos-shotWidth/2, spray[i].yPos-shotWidth/2, shotWidth, shotWidth);
+				g.setColor(Color.BLACK);
+				g.drawRect(spray[i].xPos-shotWidth/2, spray[i].yPos-shotWidth/2, shotWidth, shotWidth);
+			}
+			
+		}
+	}
+	public void paint(){
+		
+	}
+	public void delete(){
+		type = 0; 
+		xMod = 0;
+		yMod = 0;
+		xPos = -100;
+		yPos = -100;
+	}
+//	public Point getPosition(){
+//		return new Point(xPos,yPos);
+//	}
+	public int getType(){
+		return type;
+	}
+	public String toString(){
+		return("Projectile Status: "+ status +" Type: " + type +" Angle (Rad): " + angle + " Speed: " + SPEED + " Position: " + xPos+":"+yPos);
+	}
+
+}
