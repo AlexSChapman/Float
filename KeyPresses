@@ -1,0 +1,101 @@
+package FloatNew.src;
+
+import java.awt.event.KeyEvent;
+
+
+public class KeyPresses {
+	int shotType = 1;
+	double xMod = 0;
+	double yMod = 0;
+	int rotate = 0;
+	double deltaX = 10;
+	double deltaY = 10;
+	boolean shoot = false;
+	boolean pauseState = false;
+public double getXMod(){
+	return xMod;
+}
+public double getYMod(){
+	return yMod;
+}
+ public int getRotate(){
+	 return rotate;
+ }
+ public boolean getTrigger(){
+	 return shoot;
+ }
+ public boolean getPause(){
+	 return pauseState;
+ }
+ public void keyReleased(KeyEvent e) {
+		xMod = 0;
+		yMod = 0;
+		rotate = 0;
+		shoot = false;
+	}
+public void setShoot(){
+	shoot = true;
+}
+public void resetShoot(){
+	shoot = false;
+}
+public int getShotType(){
+	return shotType;
+}
+
+	public void keyPressed(KeyEvent e) {
+		if (e.getKeyCode() == KeyEvent.VK_A){
+//			xMod = -deltaX;
+			rotate = 1;
+//			System.out.println("LEFT");
+		}
+			
+		if (e.getKeyCode() == KeyEvent.VK_D){
+//			xMod = deltaX;
+			rotate = -1;
+//			System.out.println("RIGHT");
+		}
+		if (e.getKeyCode() == KeyEvent.VK_W){
+			yMod = -deltaY;
+//			System.out.println("UP");
+		}
+		if (e.getKeyCode() == KeyEvent.VK_S){
+			yMod = deltaY;
+//			System.out.println("DOWN");
+		}
+		if(e.getKeyCode() == KeyEvent.VK_SPACE){
+			shoot = true;
+		}
+		if (e.getKeyCode() == KeyEvent.VK_Q){
+			rotate = 1;
+//			System.out.println("1");
+		}
+		if (e.getKeyCode() == KeyEvent.VK_E){
+			rotate = -1;
+//			System.out.println("-1");
+		}
+		if (e.getKeyCode() == KeyEvent.VK_ESCAPE){
+			System.out.println("PAUSE");
+			pauseState = !pauseState;
+		}
+		if (e.getKeyCode() == KeyEvent.VK_1){
+			System.out.println("One");
+			shotType = 1;
+		}
+		if (e.getKeyCode() == KeyEvent.VK_2){
+			System.out.println("Two");
+			shotType = 2;
+		}
+		if (e.getKeyCode() == KeyEvent.VK_3){
+			System.out.println("Three");
+			shotType = 3;
+		}
+		if (e.getKeyCode() == KeyEvent.VK_4){
+			System.out.println("Four");
+			shotType = 4;
+		}
+		
+	}
+
+	
+}
