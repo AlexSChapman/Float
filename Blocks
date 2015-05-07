@@ -1,0 +1,126 @@
+package FloatNew.src;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Polygon;
+import java.util.Random;
+
+
+public class Blocks extends Obstacles {
+	static int numberRemaining = 0;
+	static int hits = 0;
+	
+	int[] xPoints = new int[4];
+	int[] yPoints = new int[4];
+	static final int  SIZE = 10;
+	int randomXVel, randomYVel;
+	int xMove, yMove;
+	Random gen;
+	Polygon body;
+	boolean hit = false;
+
+	public Blocks(int x, int y) {
+		numberRemaining += 1;
+		gen = new Random();
+		randomXVel = gen.nextInt(10) - 5;
+		randomYVel = gen.nextInt(10) - 5;
+		
+		yMove = y;
+		xMove = x;
+		
+		hit = false; 
+		
+		xPoints[0] = x;
+		xPoints[1] = x+SIZE;
+		xPoints[2] = x+SIZE;
+		xPoints[3] = x;
+		
+		yPoints[0] = y;
+		yPoints[1] = y;
+		yPoints[2] = y+SIZE;
+		yPoints[3] = y+SIZE;
+		
+		body = new Polygon(xPoints, yPoints, 4);
+	}
+	public void setPos(int x, int y) {
+				
+		xPoints[0] = x;
+		xPoints[1] = x+SIZE;
+		xPoints[2] = x+SIZE;
+		xPoints[3] = x;
+		
+		yPoints[0] = y;
+		yPoints[1] = y;
+		yPoints[2] = y+SIZE;
+		yPoints[3] = y+SIZE;
+		
+		body = new Polygon(xPoints, yPoints, 4);
+		
+	}
+	public void move(int WID, int HEI){
+		if(hit == false){
+			if(xMove < 0){
+				randomXVel = gen.nextInt(4);
+			}
+			if(xMove + SIZE > WID){
+				randomXVel = gen.nextInt(4) * -1;
+			}
+			if(yMove < 0){
+				randomYVel = gen.nextInt(4);
+			}
+			if(yMove + SIZE > HEI){
+				randomYVel = gen.nextInt(4) * -1;
+			}
+			xMove += randomXVel;
+			yMove += randomYVel;
+			setPos(xMove, yMove);
+		}
+	}
+	public boolean ping(Point[] input){
+		if(hit != true){
+			for(int i = 0; i < input.length; i++){
+				if(body.contains(input[i])){
+					hits++;
+					numberRemaining -= 1;
+					hit = true;
+					return hit;
+				}
+			}
+		}
+		return false;
+	}
+	public Point[] getCorners(int x, int y){
+		if(Math.abs(x-getPosition().x) < 10 && Math.abs(x-getPosition().x) < 10){
+			Point[] returned = new Point[4];
+		
+			for(int l = 0; l < 4; l++){
+					returned[l] = new Point(xPoints[l],yPoints[l]);
+				
+			}
+			return returned;
+		}
+		else{
+//			System.out.println("returningNUll");
+			Point[] blank = new Point[1];
+			return blank;
+		}
+		
+	}
+	public void paint(Graphics g){
+		if(hit == false){
+			Polygon drawn = new Polygon(xPoints, yPoints, 4);
+			g.fillPolygon(drawn);
+			g.setColor(Color.BLACK);
+			g.drawPolygon(drawn);
+		}
+		else{
+			Polygon drawn = new Polygon(xPoints, yPoints, 4);
+			g.drawPolygon(drawn);
+		}
+	
+	}
+	public Point getPosition(){
+		return new Point(xPoints[0],yPoints[0]);
+	}
+
+}
