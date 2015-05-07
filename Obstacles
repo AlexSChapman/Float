@@ -1,0 +1,22 @@
+package FloatNew.src;
+import java.awt.Graphics;
+import java.awt.Point;
+public class Obstacles {
+
+public Obstacles() {
+		System.out.println("what");
+}
+public void move(){
+	
+}
+public Point getPosition(){
+	return null;
+}
+public void paint(){
+	
+}
+public boolean ping(Point input){
+	return false;
+}
+
+}
