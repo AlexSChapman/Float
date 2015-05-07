@@ -1,0 +1,938 @@
+package FloatNew.src;
+
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
+import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Random;
+import java.util.Scanner;
+
+import javax.imageio.ImageIO;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+
+
+public class Base extends JPanel implements MouseListener{
+	
+	boolean hold = false;
+	String phrasePrint = "failed";
+
+	static Color one = new Color(255,0,0), two = new Color(255,150,0), three = new Color(200,200,0), four = new Color(0,175,0);
+	static int type = 1;
+	static double accuracy;
+	static int reinitialize = 100;
+	static int levelSwitchCounter = reinitialize;
+	static int firedShots = 0;
+	static boolean repaint = true, pauseState = false;
+	
+	static boolean mouseState = true;
+	static final int COLOR_CONST = 10;
+	static int redConst = 250, greenConst= 0, blueConst= 0, colorRun = 0; 
+	static final int INIT_NUMBER = 2;
+	private static final long serialVersionUID = 4943521343400312901L;
+
+	static int totalEnemies = 0;
+	static int counter = 0; 
+	static Color shaped = new Color(250, 100, 0);
+//	static Color shaped = new Color(0, 255, 208);
+	static Color pointed = new Color(85, 40, 120);
+	
+	static boolean between = false;
+	static boolean status = false;
+	
+	static Point Mouse, center;
+	
+	static int SHOT_WIDTH = 4;
+	static final int TRAIL_LENGTH = 5;
+	static int levelNum = 1;
+	static int  BLOCK_NUMBER = (int) Math.pow(INIT_NUMBER, levelNum);
+	static int lives = 5;
+	static int numberRemaining, WID, HEI;
+	
+	static int width = 700, height = 400;
+	
+	static int[] starX, starY, starS;
+	
+	static double minVel = .002;
+	static double friction = .21;
+	
+	static BufferedImage ship = null, starA = null, starB = null;
+	
+	static Blocks hi;
+	
+	static int xPos = 250, yPos = 250;
+	static double yVel, xVel, xAcc, yAcc;
+	
+	static double mass = 10;
+	
+	static boolean shoot, oldShoot = false;;
+	
+	static int repetitions = 0;
+	static int numberOfStars = 200;
+	
+	static int rotation; 
+	static double angleMod= 9.3;
+	
+	static int[] shotType = new int[50];
+	static Projectile[] shot = new Projectile[50];
+	static Color[] shotColor = new Color[50];
+	static Point[] shotXY = new Point[50];
+	static Blocks[] shapes = new Blocks[BLOCK_NUMBER];
+	
+	static double angleTurn = 0;
+	static double angleMove = 0;
+
+	Polygon flame, sprite;
+	Polygon[] ghosts = new Polygon[TRAIL_LENGTH];
+	
+	static boolean inside = true;
+	
+	static KeyPresses reader = new KeyPresses();
+	public static void main(String[] args) throws InterruptedException {
+		
+		Base content = new Base();
+		JFrame frame = new JFrame("POINT AND SHOOT");
+		
+		frame.setBounds(200,200,width,height);
+		frame.add(content);
+		frame.setVisible(true);
+//		frame.setBackground(Color.BLACK);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.addMouseListener(content);
+		
+		Point center = new Point(frame.getWidth()/2, frame.getHeight()/2);
+		FieldGenerator space = new FieldGenerator(numberOfStars,center,5);
+		space.update(center);
+		starX = space.getX();
+		starY = space.getY();
+		starS = space.getSize();
+		
+		WID = frame.getWidth();
+		HEI = frame.getHeight();
+		
+		Random gen = new Random();
+		for(int i = 0; i < shapes.length; i++){
+			shapes[i] = new Blocks(gen.nextInt(WID), gen.nextInt(HEI));
+//			System.out.println(shapes[i].getPosition());
+		}
+		
+		try {
+		    ship = ImageIO.read(new File("ships.png"));
+		    System.out.println(ship.getHeight());
+			
+		} catch (IOException e) {
+			System.out.println("Ship Not Found");
+		}
+		
+		while(true){
+			
+			numberRemaining = BLOCK_NUMBER;
+			totalEnemies += numberRemaining;
+			
+//			System.out.println("FIRST: " + BLOCK_NUMBER);
+			
+			level(0, frame, space, content, between);
+		}
+		
+	}
+	public static void level(int number, JFrame frame, FieldGenerator space, Base content, boolean between) throws InterruptedException{
+
+			while(numberRemaining > 0){
+				
+				colorRun += COLOR_CONST;
+				if(colorRun == 0){
+					redConst = 250;
+					blueConst = 0;
+					greenConst = 0;
+				}
+				if(colorRun <= 250){
+					redConst-= COLOR_CONST;
+					blueConst+= COLOR_CONST;
+				}
+				if(colorRun > 250 && colorRun <= 500){
+					redConst = 0;
+					blueConst -= COLOR_CONST ;
+					greenConst += COLOR_CONST;
+				}
+				if(colorRun > 500 && colorRun < 750){
+					redConst+= COLOR_CONST;
+					blueConst = 0;
+					greenConst-= COLOR_CONST;
+				}
+				if(colorRun == 750){
+					colorRun = 0;
+					redConst = 250;
+					blueConst = 0;
+					greenConst = 0;
+				}
+//				System.out.println(redConst +":"+blueConst +":"+ greenConst);
+				shaped = new Color(redConst, blueConst, greenConst);
+				
+//				System.out.println(numberRemaining);
+				if(frame.getWidth() != width || frame.getHeight() != height){ //checks the size of the window to see if star positions need updating
+					center = new Point(frame.getWidth()/2,frame.getHeight()/2);
+					space.update(center);
+					starX = space.getX();
+					starY = space.getY();
+					starS = space.getSize();
+					width = frame.getWidth();
+					height = frame.getHeight();
+
+				}
+			
+				WID = frame.getWidth();
+				HEI = frame.getHeight();
+				xAcc = reader.getXMod();
+				yAcc = reader.getYMod();
+				rotation = reader.getRotate();
+			
+				oldShoot = shoot;
+				shoot = reader.getTrigger();
+			
+				repetitions++;
+				
+//				System.out.println(mouseState);
+				pauseState = reader.getPause();
+				
+				content.repaint();
+					
+				if( pauseState == false && mouseState == true && lives >0) {
+					if(levelSwitchCounter < 0){
+						content.move();
+						counter+= 25;
+					}
+				
+					levelSwitchCounter--;
+				}
+				
+				
+				Thread.sleep(25);
+			}
+			modifyQuantities(frame, space, content);
+//			printDeclaration();
+		
+		
+		}
+		
+	
+	public static void modifyQuantities(JFrame frame, FieldGenerator space, Base content) throws InterruptedException{
+		
+		counter = 0;
+		
+		levelNum++;
+		BLOCK_NUMBER = (int) Math.pow(INIT_NUMBER, levelNum);
+		shot = null;
+		shotColor = null;
+		shotXY = null;
+		shapes = null;
+		shotType = null;
+		
+		
+		numberRemaining = BLOCK_NUMBER;
+
+		shotType = new int[50];
+		 shot = new Projectile[50];
+		 shotColor = new Color[50];
+		 shotXY = new Point[50];
+		 shapes = new Blocks[BLOCK_NUMBER];
+		 
+		 Random gen = new Random();
+		 shaped = new Color(250 - levelNum*10, levelNum*10, levelNum*5);
+		 
+		 System.out.println("LENGHT: " + shapes.length);
+		 for(int i = 0; i < shapes.length; i++){
+				shapes[i] = new Blocks(gen.nextInt(WID), gen.nextInt(HEI));
+			}
+		 lives += 1;
+		levelSwitchCounter = reinitialize;
+		 level(levelNum, frame, space, content, false);
+	}
+	
+	public static void shotReset(){
+		
+	}
+	
+	public Base() {
+		addKeyListener(new KeyListener() {
+			@Override
+			public void keyTyped(KeyEvent e) {
+			}
+
+			@Override
+			public void keyReleased(KeyEvent e) {
+				reader.keyReleased(e);
+			}
+
+			@Override
+			public void keyPressed(KeyEvent e) {
+				reader.keyPressed(e);
+			}
+			
+		});
+	
+		setFocusable(true);
+	}
+	
+	@Override
+	public void paint(Graphics g) throws ArrayIndexOutOfBoundsException{
+		
+		if(repaint == true){
+			super.paint(g);
+		}
+		pauseState = reader.getPause();
+		
+		Graphics2D g2d = (Graphics2D) g;
+		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+				RenderingHints.VALUE_ANTIALIAS_ON);
+//		g.fillOval(WID/2-3, HEI/2-3, 6, 6);
+		
+		g.setFont(new Font("Impact", Font.PLAIN, 10));
+		//**paint boxes
+		g.setColor(one);
+
+		if(type == 1){
+			g.fillRect(20,70,10,10);
+			g.setColor(Color.BLACK);
+			g.drawString(type+"", 25, 78);
+		}
+		else{
+			g.drawRect(20,70,10,10);
+		}
+//		if(levelNum > 3){
+			g.setColor(two);
+			if(type == 2){
+				g.fillRect(40,70,10,10);
+				g.setColor(Color.BLACK);
+				g.drawString(type+"", 45, 78);
+			}
+			else{
+				g.drawRect(40,70,10,10);
+			}
+//		}
+		
+		
+//		if(levelNum > 5){
+			g.setColor(three);
+			if(type == 3){
+				g.fillRect(60,70,10,10);
+				g.setColor(Color.BLACK);
+				g.drawString(type+"", 65, 78);
+			}
+			else{
+				g.drawRect(60,70,10,10);
+			}
+//		}
+		
+//		if(levelNum > 7){
+			g.setColor(four);
+			if(type == 4){
+				g.fillRect(80,70,10,10);
+				g.setColor(Color.BLACK);
+				g.drawString(type+"", 85, 78);
+			}
+			else{
+				g.drawRect(80,70,10,10);
+			}
+//		}
+		
+		g.setColor(Color.BLACK);
+		
+		
+		g.setFont(new Font("Impact", Font.PLAIN, 15));
+		
+		boolean once = true;
+		if(lives <= 0){
+			g.setFont(new Font("Impact", Font.PLAIN, 20));
+			if(once != hold){
+				File deathMessages = new File("deathMessages.txt");
+				Scanner read = null;
+				try {
+					read = new Scanner(deathMessages);
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				}
+				int rep = read.nextInt();
+				String[] phrases = new String[rep];
+				read.nextLine();
+				for(int i = 0; i < rep; i++){
+					phrases[i] = read.nextLine();
+				}
+				Random gen = new Random();
+				phrasePrint = phrases[gen.nextInt(rep)];
+				
+			}
+			hold = true;
+			
+			
+			double score = Blocks.hits*accuracy;
+			String scr = score+"";
+			
+			g.drawString("GAME OVER", WID/2-36, HEI/2-50);
+			g.drawString(phrasePrint, WID/2-(phrasePrint.length()*4), HEI/2-25);
+			String result = "SCORE: " + scr.substring(0,scr.indexOf(".")+2);
+			g.drawString(result, WID/2-(result.length()*4), HEI/2);
+		}
+		
+		g.drawString("LIVES: "+  lives, 10, 20);
+		if(levelNum != 1){
+			numberRemaining = Blocks.numberRemaining-1;
+		}
+		else{
+			numberRemaining = Blocks.numberRemaining;
+		}
+		g.drawString("NUMBER LEFT: " + numberRemaining, 10, 40);
+
+		int hits = Blocks.hits;
+		if(hits == 0){
+			hits = 1;
+		}
+		String written;
+		accuracy = (double)hits/firedShots;
+		String ac = accuracy +"";
+		if(ac.equalsIgnoreCase("Infinity") || ac.equalsIgnoreCase("1.0")){
+			written = "100%";
+		}
+		else{
+			if(ac.length()< 10){
+				for(int i = 0; i < 10-ac.length(); i++){
+					ac +="0";
+				}
+			}
+			
+				try{
+					written = ac.substring(2,4)+"." +ac.substring(4,6) + "%";
+				}catch(StringIndexOutOfBoundsException ex){
+					written = ac;
+				}
+		}
+		
+		
+		
+		
+		g.drawString("ACCURACY: " + written , 10, 60);
+		if(between == false){
+			for( int i = 0; i < shot.length; i++){
+				try{
+					for(int j = 0; j < shapes.length; j++){
+						
+						if(shotType[i] == 3 && shapes[j].ping(shot[i].getPosition())){
+							shot[i].explode();
+							if(shot[i].status ==false){
+								shot[i] = null;
+							};
+							shotType[i] = 0;
+							shotColor[i] = null;
+						}
+						else{
+							shapes[j].ping(shot[i].getPosition());
+						}
+						
+
+				}
+				}catch(NullPointerException ex){};
+			}
+			for( int i = 0; i < shapes.length; i++){
+				try{
+//					Color shaped = new Color(250, 100, 0);
+					g.setColor(shaped);
+					shapes[i].paint(g);
+					g.setColor(Color.BLACK);
+				}catch(NullPointerException ex){
+					
+				};
+				}
+			
+			int[] xPoints = {xPos-7,xPos,xPos+7,xPos}; //pointer xPoints
+			int[] yPoints = {yPos+5,yPos+1, yPos+5,yPos-15}; //pointer yPoints
+			 
+			int[] fPntsX = {xPos-6,xPos+6,xPos}; //flame xPoints
+			int[] fPntsY = {yPos+2,yPos+2,yPos+14}; //flame yPoints
+			
+			//controls the motion of the pointer, essentially
+			Point center = new Point(xPos, yPos);
+			/*
+			 * This is necessary for several reasons
+			 * 	-the rotation is positive in the clockwise direction when drawing
+			 *  -the rotation is positive in the COUNTERclockwise direction when moving
+			 *  -making the thing work
+			 */
+//			changeAngle();
+			
+			if(yAcc < 0){
+					flame = rotateFlame( fPntsX, fPntsY, center);
+			}
+			//this is the default position of flame
+			else{ 
+				int[] tempX = {-10, -10, -10};
+				int[] tempY = {0,0,0};
+				flame = new Polygon(tempX,tempY,3);
+				boolean singleAdd = true;
+				int i = 0;
+				while(singleAdd){
+					i++;
+					if(i >= shot.length){
+						singleAdd = false;
+					}
+					else{
+//						try{
+						
+							if(shoot != false && oldShoot != shoot && shot[i] == null && levelSwitchCounter < 0){
+								firedShots++;
+//								int type = 2;
+//								if(levelNum == 1){
+//									type = 1;
+//								}
+								
+//								shot[i] = new Projectile(shotType[i],angleTurn-90,xPos,yPos);
+								shot[i] = new Projectile(type,angleTurn-90,xPos,yPos);
+								shotType[i] = type;
+								Random gen = new Random();
+								Color used = new Color(gen.nextInt(250), gen.nextInt(250), gen.nextInt(250));
+								shotColor[i] = used;
+								singleAdd = false;
+							}
+							else{
+//								System.out.println(i + ":"+ shot[i]);
+							}
+//					}catch(ArrayIndexOutOfBoundsException ex){
+//						
+//					}
+						
+						
+					}
+					
+				}
+			}
+			
+			for(int i = 0; i<4;i++){ //rotates the pointer
+				Point used = new Point(xPoints[i],yPoints[i]);
+				
+				Point returned = rotatePoint(used, center, angleTurn);
+				
+				xPoints[i] = returned.x;
+				yPoints[i] = returned.y;
+			}
+			
+			sprite = new Polygon(xPoints,yPoints,4); //test bounds code
+			
+			for(int i = 0; i < shot.length; i++){
+				if(shot[i] != null){
+					if(shotColor[i] != null){
+						shot[i].paint(g2d, shotColor[i]);
+					}
+				}
+			}
+		}
+		else{
+
+			System.out.println(between + "YAS");
+			 between = false;
+		}
+		if( pauseState == false && mouseState == true) {
+			
+		}
+		else{
+			g.setFont(new Font("Impact", Font.PLAIN, 20));
+			g.drawString("GAME PAUSED", WID/2 - 50, HEI/2+20);
+		}
+		if(levelSwitchCounter > 0){
+			g.setFont(new Font("Impact", Font.PLAIN, 20));
+			
+			if(levelSwitchCounter < 20){
+				g.drawString("GO.", WID/2-10, HEI/2-10);
+			}
+			else if(levelSwitchCounter < 75){
+				g.drawString("Get Set..", WID/2-30, HEI/2-10);
+			}
+			else if(levelNum == 1){
+				g.drawString("On Your Marks..", WID/2-60, HEI/2-10);
+			}
+			else{
+				g.drawString("Nice! You beat level " + (levelNum-1), WID/2-75, HEI/2-10);
+			}
+			
+		}
+		
+//		drawShip(g);
+		drawPointer(g,true);
+		
+//		System.out.println(levelSwitchCounter);
+//		drawStars(g);
+		drawReticle(g);
+		}
+	public Point rotatePoint(Point pt, Point center, double angleDeg)
+	{
+	    double angleRad = ((angleDeg/180)*Math.PI);
+	    double cosAngle = Math.cos(angleRad );
+	    double sinAngle = Math.sin(angleRad );
+	    double dx = (pt.x-center.x);
+	    double dy = (pt.y-center.y);
+
+	    pt.x = center.x + (int) (dx*cosAngle-dy*sinAngle);
+	    pt.y = center.y + (int) (dx*sinAngle+dy*cosAngle);
+	    return pt;
+	}
+	@SuppressWarnings("null")
+	public void move(){
+		
+		type = reader.getShotType();
+		
+		try{
+			Mouse = getMousePosition();
+			double xs = Mouse.x-xPos;
+			double ys = Mouse.y-yPos;
+			if(xs < 0){
+				if(xs != 0){
+//					System.out.println("MouseAngle: " + Math.toDegrees(Math.atan(ys/xs)));
+					angleTurn = Math.toDegrees(Math.atan(ys/xs))-90;
+					angleMove = -Math.toDegrees(Math.atan(ys/xs))+90;
+				}
+				else{
+//					System.out.println("MouseAngle: " + Math.toDegrees(Math.atan(0)));
+					angleTurn = Math.toDegrees(Math.atan(0))-90;
+					angleMove = -Math.toDegrees(Math.atan(0))+90;
+				}
+			}
+			else{
+				if(xs != 0){
+//					System.out.println("MouseAngle: " + Math.toDegrees(Math.atan(ys/xs)));
+					angleTurn = Math.toDegrees(Math.atan(ys/xs))+90;
+					angleMove = -Math.toDegrees(Math.atan(ys/xs))-90;
+				}
+				else{
+//					System.out.println("MouseAngle: " + Math.toDegrees(Math.atan(0)));
+					angleTurn = Math.toDegrees(Math.atan(0))+90;
+					angleMove = -Math.toDegrees(Math.atan(0))-90;
+				}
+			}
+			
+		}catch(NullPointerException ex){
+			
+		};
+		
+		for(int i = 0; i < shapes.length; i++){
+			shapes[i].move(WID, HEI);
+			Point[] tested;
+			tested = shapes[i].getCorners(xPos, yPos);
+			try{
+				
+				for(int q = 0; q<tested.length; q++){
+				
+					if(sprite.contains(tested[q]) && shapes[i].hit == false && counter > 1000){
+						System.out.println("LOST A LIFE");
+						lives -= 1;
+						counter = 0;
+						pointed = shaped;
+					}
+				}
+			}catch(NullPointerException ex){
+//				System.out.println("NO POINTS RETURNED");
+			};
+		}
+		
+		for(int i = 0; i < shot.length; i++){
+			try{
+				shotXY[i] = shot[i].move(WID, HEI);
+				if(shotXY[i] == null){
+					shot[i] = null; 
+					shotXY[i] = null;
+					shotColor[i] = null;
+					shotType[i] = (Integer) null;
+				}
+			}catch(NullPointerException ex){
+			
+			};
+		}
+		
+		double radAngle = 0;
+		try{
+			radAngle = (angleMove/180)*Math.PI;
+		}catch(ArithmeticException ex){
+			radAngle = 0;
+		}
+		double pi = Math.PI;
+		
+		
+		
+		if(yAcc*Math.sin(pi/2-radAngle) != 0 || xAcc*Math.sin(radAngle)!= 0){
+				yVel += (yAcc*Math.sin(pi/2-radAngle)+xAcc*Math.sin(radAngle))/mass;
+		}
+		else if((Math.abs(yVel)-.5) > minVel){
+			Double sign = yVel/Math.abs(yVel);
+			yVel = sign * (Math.abs(yVel)-friction);
+		}
+		else{
+			yVel = 0;
+		}
+		
+		
+		
+		if(yAcc*Math.cos(pi/2-radAngle) != 0 || xAcc*Math.cos(radAngle) != 0){
+			xVel += (yAcc*Math.cos(pi/2-radAngle)+xAcc*Math.cos(radAngle))/mass; 
+		}
+		else if((Math.abs(xVel)-.5) > minVel){
+			Double sign = xVel/Math.abs(xVel);
+			xVel = sign * (Math.abs(xVel)-friction);
+		}
+		else{
+			xVel = 0;
+		}
+//		System.out.println(xVel);
+		
+		if(xPos-5 < 0 || xPos+20 > WID){
+			if(xVel != 0){
+				xVel = -xVel/2;
+			}
+			else{
+				if(xPos < WID /2){
+					xPos = 5;
+				} 
+				else if(xPos > WID/2){
+					xPos = WID-25;
+				}
+						
+		}
+		}
+		if(yPos-5 < 0 || yPos + 50 > HEI){
+			if(yVel != 0){
+				yVel = -yVel/2;
+			}
+			else{
+				if(yPos < HEI /2){
+					yPos = 5;
+				}
+				else if(yPos > HEI/2){
+					yPos = HEI-55;
+				}
+						
+		}
+		}
+		
+
+		if(inside == true){
+			xPos+=xVel;
+
+			yPos+=yVel;
+		}
+		else{
+			xPos=200;
+
+			yPos=200;
+		}
+//		System.out.println(yAcc);
+	
+		
+	}
+	public void drawShip(Graphics g2d){
+		
+				
+//				g.drawImage(ship, xPos-60, yPos-41,110,82, observer);
+
+//				// The required drawing location
+				int drawLocationX = xPos-25;
+				int drawLocationY = yPos-25;
+		//
+//				// Rotation information
+				double rotationRequired = Math.toRadians(angleTurn);
+				double locationX = 288 / 2;
+				double locationY = 362 / 2;
+				AffineTransform tx = AffineTransform.getRotateInstance(rotationRequired, locationX, locationY);
+				AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BILINEAR);
+//				// Drawing the rotated image at the required drawing locations
+				if(yAcc!=0){
+					
+					try {
+					    ship = ImageIO.read(new File("Thrusters Orange.png"));
+//					    System.out.println(ship.getHeight());
+						
+					} catch (IOException e) {
+						System.out.println("Ship Not Found");
+					}
+			
+				}
+				else{
+					try {
+					    ship = ImageIO.read(new File("ships.png"));
+//					    System.out.println(ship.getHeight());
+						
+					} catch (IOException e) {
+						System.out.println("Ship Not Found");
+					}
+				}
+				try{
+					g2d.drawImage(op.filter(ship, null), drawLocationX, drawLocationY,50,50, null);
+				}catch(NullPointerException ex){
+					System.out.println("k");
+				};
+	}
+	public void drawReticle(Graphics g){
+		if(Mouse != null){
+			if(type == 1){
+				g.setColor(one);
+			}
+			else if(type == 2){
+				g.setColor(two);
+			}
+			else if(type == 3){
+				g.setColor(three);
+			}
+			g.fillOval(Mouse.x-2, Mouse.y-2, 4, 4);
+			g.drawLine(Mouse.x-10, Mouse.y, Mouse.x, Mouse.y-10);
+			g.drawLine(Mouse.x-10, Mouse.y, Mouse.x-5, Mouse.y);
+		}
+		
+	}
+	public void drawStars(Graphics g){
+		g.setColor(Color.WHITE);
+		for(int i = 0; i < numberOfStars; i++){
+			if(i % 3 == 0){ //1/3 of stars are blue
+				g.setColor(Color.BLACK);
+			}
+			else{
+				g.setColor(Color.BLACK); 
+			}
+			g.fillOval(starX[i], starY[i], starS[i], starS[i]); //using the arrays generated by FieldGenerator
+		}
+	}
+	public void drawPointer(Graphics g, boolean trace){
+		
+//		Color pointed = new Color(150, 150, 200);
+		
+		
+		g.setColor(new Color(150, 50, 0, 100));
+		try{
+			g.fillPolygon(flame);
+		}catch(NullPointerException ex){	
+		}
+		for(int i = ghosts.length-1; i>0; i--){
+			ghosts[i] = ghosts[i-1];
+		}
+		ghosts[0] = sprite;
+		if(trace == true){
+			for(int i = ghosts.length-1; i > -1 ;i--){
+				
+				try{ //catches null pointer exception thrown at the beginning
+					if(counter < 1500){
+						if(counter % 300 < 150){
+							g.setColor(shaped);
+						}
+						else{
+							g.setColor(Color.WHITE);
+						}
+						
+						g.fillPolygon(ghosts[i]);
+					
+						g.setColor(Color.BLACK);
+						g.drawPolygon(ghosts[i]);
+					}
+					else if(i == 0){ //if its the actual pointer
+						g.setColor(pointed);
+						g.fillPolygon(ghosts[i]);
+					
+						g.setColor(Color.BLACK);
+						g.drawPolygon(ghosts[i]);
+					}
+					else{ //just draw outline
+						g.setColor(Color.BLACK);
+						g.drawPolygon(ghosts[i]);
+					}
+			}catch(NullPointerException ex){
+			}
+		}
+	}
+		else{
+			g.setColor(Color.GRAY);
+			g.fillPolygon(ghosts[0]);
+		
+			g.setColor(Color.BLACK);
+			g.drawPolygon(ghosts[0]);
+		}
+
+}
+	public void changeAngle(){
+		if(rotation == -1){
+			angleTurn += angleMod;
+			angleMove -= angleMod; 
+		}
+		else if(rotation == 1){
+			angleTurn-= angleMod;
+			angleMove += angleMod;
+		}
+		
+		if(angleTurn>360){
+			angleTurn -= 360;
+		}
+		else if(angleTurn < 0){
+			angleTurn += 360;
+		}
+		
+		if(angleMove>360){
+			angleMove -= 360;
+		}
+		else if(angleMove < 0){
+			angleMove += 360;
+		}
+		
+	}
+	public Polygon rotateFlame(int[] fPntsX, int[] fPntsY, Point center){
+		for(int i = 0; i<3;i++){ //rotates the flames (if they exist)
+			Point used = new Point(fPntsX[i],fPntsY[i]);
+			
+			Point returned = rotatePoint(used, center, angleTurn);
+			
+			fPntsX[i] = returned.x;
+			fPntsY[i] = returned.y;
+		}
+		return new Polygon(fPntsX, fPntsY, 3);
+	}
+	@Override
+	public void mouseClicked(MouseEvent arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void mouseEntered(MouseEvent arg0) {
+		// TODO Auto-generated method stub
+		mouseState = true;
+	
+	}
+	@Override
+	public void mouseExited(MouseEvent arg0) {
+		// TODO Auto-generated method stub
+		pauseState = true;
+		mouseState = false;
+	}
+	@Override
+	public void mousePressed(MouseEvent arg0) {
+		// TODO Auto-generated method stub
+//		System.out.println("pressed");
+		reader.setShoot();
+	}
+	@Override
+	public void mouseReleased(MouseEvent arg0) {
+		// TODO Auto-generated method stub
+//		System.out.println("released");
+		reader.resetShoot();
+	}
+}
